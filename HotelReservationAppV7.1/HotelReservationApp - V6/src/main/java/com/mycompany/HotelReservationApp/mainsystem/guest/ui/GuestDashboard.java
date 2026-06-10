@@ -35,13 +35,12 @@ public class GuestDashboard extends JFrame implements ActionListener {
             }
         } catch (Exception ex) {
             Logger.getInstance().warn("Session not initialized when opening GuestDashboard");
-        }        
+        }
         
         createComponents();
     }
     
     private void createComponents() {
-        // Sidebar
         sidebar = new JPanel();
         sidebar.setBounds(0, 0, 250, 700);
         sidebar.setLayout(null);
@@ -59,7 +58,6 @@ public class GuestDashboard extends JFrame implements ActionListener {
         lblManagement.setForeground(Color.WHITE);
         sidebar.add(lblManagement);
         
-        // Sidebar Buttons
         btnRooms = createSideButton("Search Rooms", 160);
         btnMake = createSideButton("Make Reservation", 230);
         btnView = createSideButton("View Reservations", 300);
@@ -81,7 +79,6 @@ public class GuestDashboard extends JFrame implements ActionListener {
         sidebar.add(btnProfile);
         sidebar.add(btnLogout);
         
-        // Top Panel
         topPan = new JPanel();
         topPan.setBounds(250, 0, 950, 150);
         topPan.setLayout(null);
@@ -97,13 +94,13 @@ public class GuestDashboard extends JFrame implements ActionListener {
         } catch (Exception ex) {
             Logger.getInstance().warn("Error retrieving username for welcome message");
         }
+        
         lblWelcome = new JLabel(welcomeText);
         lblWelcome.setBounds(280, 50, 650, 60);
         lblWelcome.setFont(new Font("Arial Black", Font.BOLD, 48));
         lblWelcome.setForeground(Color.decode("#222222"));
         topPan.add(lblWelcome);
         
-        // Content Area
         contentArea = new JPanel();
         contentArea.setBounds(250, 150, 950, 550);
         contentArea.setLayout(null);
@@ -113,7 +110,6 @@ public class GuestDashboard extends JFrame implements ActionListener {
         add(topPan);
         add(contentArea);
         
-        // Load initial panel (Dashboard/Welcome screen)
         loadDashboardPanel();
     }
     
@@ -212,7 +208,6 @@ public class GuestDashboard extends JFrame implements ActionListener {
             } catch (Exception ex) {
                 Logger.getInstance().warn("Error logging logout event");
             }
-            
             SessionManager.logout();
             dispose();
             new LoginFrame().setVisible(true);

@@ -1,36 +1,23 @@
 package com.mycompany.HotelReservationApp.mainsystem.guest.ui;
 
-import javax.swing.table.*;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.time.*;
-import java.time.format.*;
+import java.time.LocalDate;
 
 /**
- * SearchRoomsPanel - Room Search & Availability
- * Comprehensive room filtering with real-time availability checking
- * Features: Date validation, price range filtering, room selection
+ * SearchRoomsPanel - Search and Filter Available Rooms
+ * Displays available rooms with filters by date, type, capacity, and price
  */
 public class SearchRoomsPanel extends JPanel implements ActionListener {
     
-    private JLabel lblTitle;
-    private JLabel lblCheckInDate, lblCheckOutDate, lblRoomType, lblPax, lblPriceRange;
-    
-    private JTextField txtCheckInDate, txtCheckOutDate, txtPax, txtPriceMin, txtPriceMax;
-    private JComboBox<String> cbRoomType;
-    
-    private JButton btnSearch, btnClear, btnSelectRoom;
-    private JTable roomTable;
-    private DefaultTableModel model;
-    private JScrollPane scrollPane;
-    
-    private JPanel titleBar, filterBar;
-    private String[] columns;
-    
-    // Selected room data
-    private int selectedRoomId = -1;
-    private String selectedRoomNumber = "";
+    private JTextField txtCheckIn, txtCheckOut, txtMinPrice, txtMaxPrice;
+    private JComboBox<String> cmbRoomType, cmbCapacity;
+    private JButton btnSearch, btnClear;
+    private JTable roomsTable;
+    private DefaultTableModel tableModel;
+    private JLabel lblErrorMessage;
     
     public SearchRoomsPanel() {
         setLayout(null);
@@ -39,312 +26,186 @@ public class SearchRoomsPanel extends JPanel implements ActionListener {
     }
     
     private void createComponents() {
-        // Title Bar
-        titleBar = new JPanel(null);
+        JPanel titleBar = new JPanel(null);
         titleBar.setBounds(30, 20, 880, 50);
         titleBar.setBackground(Color.decode("#222222"));
         add(titleBar);
         
-        lblTitle = new JLabel("SEARCH AVAILABLE ROOMS");
+        JLabel lblTitle = new JLabel("SEARCH AVAILABLE ROOMS");
         lblTitle.setBounds(15, 8, 400, 34);
         lblTitle.setFont(new Font("Arial Black", Font.BOLD, 20));
         lblTitle.setForeground(Color.WHITE);
         titleBar.add(lblTitle);
         
-        // Filter Bar
-        filterBar = new JPanel(null);
-        filterBar.setBounds(30, 80, 880, 120);
-        filterBar.setBackground(Color.decode("#333333"));
-        filterBar.setBorder(BorderFactory.createLineBorder(Color.decode("#222222")));
-        add(filterBar);
+        lblErrorMessage = new JLabel();
+        lblErrorMessage.setFont(new Font("Arial", Font.PLAIN, 11));
+        lblErrorMessage.setForeground(new Color(244, 67, 54));
+        lblErrorMessage.setBounds(30, 75, 880, 20);
+        lblErrorMessage.setVisible(false);
+        add(lblErrorMessage);
         
-        // Check-in Date
-        lblCheckInDate = new JLabel("Check-in Date (YYYY-MM-DD):");
-        lblCheckInDate.setBounds(15, 8, 180, 18);
-        lblCheckInDate.setForeground(Color.WHITE);
-        lblCheckInDate.setFont(new Font("Arial Black", Font.BOLD, 11));
-        filterBar.add(lblCheckInDate);
+        JPanel filterPanel = new JPanel(null);
+        filterPanel.setBounds(30, 100, 880, 80);
+        filterPanel.setBackground(Color.WHITE);
+        filterPanel.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+        add(filterPanel);
         
-        txtCheckInDate = new JTextField();
-        txtCheckInDate.setBounds(15, 28, 140, 28);
-        filterBar.add(txtCheckInDate);
+        JLabel lblCheckIn = new JLabel("Check-In (YYYY-MM-DD):");
+        lblCheckIn.setBounds(15, 10, 150, 20);
+        lblCheckIn.setFont(new Font("Arial", Font.BOLD, 11));
+        filterPanel.add(lblCheckIn);
         
-        // Check-out Date
-        lblCheckOutDate = new JLabel("Check-out Date (YYYY-MM-DD):");
-        lblCheckOutDate.setBounds(170, 8, 200, 18);
-        lblCheckOutDate.setForeground(Color.WHITE);
-        lblCheckOutDate.setFont(new Font("Arial Black", Font.BOLD, 11));
-        filterBar.add(lblCheckOutDate);
+        txtCheckIn = new JTextField();
+        txtCheckIn.setBounds(170, 8, 120, 25);
+        filterPanel.add(txtCheckIn);
         
-        txtCheckOutDate = new JTextField();
-        txtCheckOutDate.setBounds(170, 28, 140, 28);
-        filterBar.add(txtCheckOutDate);
+        JLabel lblCheckOut = new JLabel("Check-Out (YYYY-MM-DD):");
+        lblCheckOut.setBounds(310, 10, 150, 20);
+        lblCheckOut.setFont(new Font("Arial", Font.BOLD, 11));
+        filterPanel.add(lblCheckOut);
         
-        // Room Type
-        lblRoomType = new JLabel("Room Type:");
-        lblRoomType.setBounds(330, 8, 100, 18);
-        lblRoomType.setForeground(Color.WHITE);
-        lblRoomType.setFont(new Font("Arial Black", Font.BOLD, 11));
-        filterBar.add(lblRoomType);
+        txtCheckOut = new JTextField();
+        txtCheckOut.setBounds(465, 8, 120, 25);
+        filterPanel.add(txtCheckOut);
         
-        cbRoomType = new JComboBox<>(new String[]{
+        JLabel lblType = new JLabel("Room Type:");
+        lblType.setBounds(15, 40, 150, 20);
+        lblType.setFont(new Font("Arial", Font.BOLD, 11));
+        filterPanel.add(lblType);
+        
+        cmbRoomType = new JComboBox<>(new String[]{
             "- All Types -", "Single Standard", "Double Standard", "Double Deluxe", "Suite Deluxe"
         });
-        cbRoomType.setBounds(330, 28, 150, 28);
-        filterBar.add(cbRoomType);
+        cmbRoomType.setBounds(170, 38, 120, 25);
+        filterPanel.add(cmbRoomType);
         
-        // Number of Pax
-        lblPax = new JLabel("Max Guests:");
-        lblPax.setBounds(500, 8, 100, 18);
-        lblPax.setForeground(Color.WHITE);
-        lblPax.setFont(new Font("Arial Black", Font.BOLD, 11));
-        filterBar.add(lblPax);
+        JLabel lblCapacity = new JLabel("Capacity:");
+        lblCapacity.setBounds(310, 40, 150, 20);
+        lblCapacity.setFont(new Font("Arial", Font.BOLD, 11));
+        filterPanel.add(lblCapacity);
         
-        txtPax = new JTextField();
-        txtPax.setBounds(500, 28, 80, 28);
-        filterBar.add(txtPax);
+        cmbCapacity = new JComboBox<>(new String[]{
+            "- Any -", "1 Guest", "2 Guests", "3 Guests", "4+ Guests"
+        });
+        cmbCapacity.setBounds(465, 38, 120, 25);
+        filterPanel.add(cmbCapacity);
         
-        // Price Range
-        lblPriceRange = new JLabel("Price Range (PHP):");
-        lblPriceRange.setBounds(15, 65, 140, 18);
-        lblPriceRange.setForeground(Color.WHITE);
-        lblPriceRange.setFont(new Font("Arial Black", Font.BOLD, 11));
-        filterBar.add(lblPriceRange);
+        JLabel lblPrice = new JLabel("Price Range:");
+        lblPrice.setBounds(610, 40, 100, 20);
+        lblPrice.setFont(new Font("Arial", Font.BOLD, 11));
+        filterPanel.add(lblPrice);
         
-        txtPriceMin = new JTextField("0");
-        txtPriceMin.setBounds(15, 85, 80, 25);
-        filterBar.add(txtPriceMin);
+        txtMinPrice = new JTextField("0");
+        txtMinPrice.setBounds(710, 38, 50, 25);
+        filterPanel.add(txtMinPrice);
         
-        JLabel lblTo = new JLabel("-");
-        lblTo.setBounds(100, 85, 20, 25);
-        lblTo.setForeground(Color.WHITE);
-        lblTo.setFont(new Font("Arial", Font.BOLD, 12));
-        filterBar.add(lblTo);
+        JLabel lblTo = new JLabel("to");
+        lblTo.setBounds(765, 40, 20, 20);
+        filterPanel.add(lblTo);
         
-        txtPriceMax = new JTextField("100000");
-        txtPriceMax.setBounds(125, 85, 80, 25);
-        filterBar.add(txtPriceMax);
+        txtMaxPrice = new JTextField("10000");
+        txtMaxPrice.setBounds(785, 38, 60, 25);
+        filterPanel.add(txtMaxPrice);
         
-        // Search Button
         btnSearch = new JButton("SEARCH");
-        btnSearch.setBounds(220, 85, 100, 25);
-        btnSearch.setBackground(Color.WHITE);
-        btnSearch.setForeground(Color.BLACK);
-        btnSearch.setFont(new Font("Arial Black", Font.BOLD, 11));
+        btnSearch.setBounds(650, 8, 100, 25);
+        btnSearch.setBackground(new Color(76, 175, 80));
+        btnSearch.setForeground(Color.WHITE);
+        btnSearch.setFont(new Font("Arial", Font.BOLD, 11));
         btnSearch.setBorderPainted(false);
         btnSearch.setFocusPainted(false);
         btnSearch.addActionListener(this);
-        filterBar.add(btnSearch);
+        filterPanel.add(btnSearch);
         
-        // Clear Button
         btnClear = new JButton("CLEAR");
-        btnClear.setBounds(330, 85, 80, 25);
-        btnClear.setBackground(Color.decode("#FFC107"));
+        btnClear.setBounds(760, 8, 100, 25);
+        btnClear.setBackground(new Color(255, 193, 7));
         btnClear.setForeground(Color.BLACK);
-        btnClear.setFont(new Font("Arial Black", Font.BOLD, 11));
+        btnClear.setFont(new Font("Arial", Font.BOLD, 11));
         btnClear.setBorderPainted(false);
         btnClear.setFocusPainted(false);
         btnClear.addActionListener(this);
-        filterBar.add(btnClear);
+        filterPanel.add(btnClear);
         
-        // Table
-        columns = new String[]{
-            "Room ID", "Room #", "Floor", "Type", "Capacity", "Price/Night", "Status"
-        };
-        model = new DefaultTableModel(columns, 0) {
+        String[] columns = {"Room #", "Type", "Floor", "Capacity", "Price/Night", "Amenities"};
+        tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
         
-        roomTable = new JTable(model);
-        roomTable.setFont(new Font("Arial", Font.PLAIN, 12));
-        roomTable.setRowHeight(25);
-        roomTable.getTableHeader().setBackground(Color.decode("#222222"));
-        roomTable.getTableHeader().setForeground(Color.WHITE);
-        roomTable.getTableHeader().setFont(new Font("Arial Black", Font.BOLD, 12));
-        roomTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        roomsTable = new JTable(tableModel);
+        roomsTable.setFont(new Font("Arial", Font.PLAIN, 12));
+        roomsTable.setRowHeight(22);
+        roomsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         
-        // Enable row selection to pass room data
-        roomTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int row = roomTable.getSelectedRow();
-                if (row >= 0) {
-                    selectedRoomId = (int) model.getValueAt(row, 0);
-                    selectedRoomNumber = (String) model.getValueAt(row, 1);
-                }
-            }
-        });
-        
-        scrollPane = new JScrollPane(roomTable);
-        scrollPane.setBounds(30, 215, 880, 310);
-        scrollPane.setBorder(BorderFactory.createLineBorder(Color.decode("#222222")));
+        JScrollPane scrollPane = new JScrollPane(roomsTable);
+        scrollPane.setBounds(30, 190, 880, 330);
         add(scrollPane);
         
-        // Select Room Button
-        btnSelectRoom = new JButton("PROCEED TO BOOKING");
-        btnSelectRoom.setBounds(600, 535, 310, 35);
-        btnSelectRoom.setBackground(new Color(76, 175, 80));
-        btnSelectRoom.setForeground(Color.WHITE);
-        btnSelectRoom.setFont(new Font("Arial Black", Font.BOLD, 12));
-        btnSelectRoom.setBorderPainted(false);
-        btnSelectRoom.setFocusPainted(false);
-        btnSelectRoom.addActionListener(this);
-        add(btnSelectRoom);
-        
-        btnSearch.addActionListener(this);
+        loadSampleRooms();
+    }
+    
+    private void loadSampleRooms() {
+        tableModel.addRow(new Object[]{"101", "Single Standard", "1", "1", "₱2,500", "WiFi, TV, AC"});
+        tableModel.addRow(new Object[]{"102", "Double Standard", "1", "2", "₱4,000", "WiFi, TV, AC, Bathtub"});
+        tableModel.addRow(new Object[]{"201", "Double Deluxe", "2", "2", "₱5,000", "WiFi, TV, AC, Minibar, Balcony"});
+        tableModel.addRow(new Object[]{"301", "Suite Deluxe", "3", "4", "₱8,000", "WiFi, TV, AC, Minibar, Kitchenette"});
+        tableModel.addRow(new Object[]{"103", "Single Standard", "1", "1", "₱2,500", "WiFi, TV, AC"});
     }
     
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSearch) {
-            handleSearch();
+            performSearch();
         } else if (e.getSource() == btnClear) {
             clearFilters();
-        } else if (e.getSource() == btnSelectRoom) {
-            handleSelectRoom();
         }
     }
     
-    private void handleSearch() {
-        String checkInDate = txtCheckInDate.getText().trim();
-        String checkOutDate = txtCheckOutDate.getText().trim();
-        String roomType = (String) cbRoomType.getSelectedItem();
-        String paxText = txtPax.getText().trim();
-        String priceMinText = txtPriceMin.getText().trim();
-        String priceMaxText = txtPriceMax.getText().trim();
+    private void performSearch() {
+        String checkIn = txtCheckIn.getText().trim();
+        String checkOut = txtCheckOut.getText().trim();
         
-        // Validation
-        if (checkInDate.isEmpty() || checkOutDate.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Please enter both check-in and check-out dates.",
-                "Validation Error", JOptionPane.ERROR_MESSAGE);
+        if (checkIn.isEmpty() || checkOut.isEmpty()) {
+            showError("Please enter check-in and check-out dates");
             return;
         }
         
-        // Parse and validate check-in date
-        LocalDate checkIn;
         try {
-            checkIn = LocalDate.parse(checkInDate, DateTimeFormatter.ISO_DATE);
-        } catch (DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Invalid check-in date format. Use YYYY-MM-DD.",
-                "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        if (checkIn.isBefore(LocalDate.now())) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Check-in date cannot be in the past.",
-                "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // Parse and validate check-out date
-        LocalDate checkOut;
-        try {
-            checkOut = LocalDate.parse(checkOutDate, DateTimeFormatter.ISO_DATE);
-        } catch (DateTimeParseException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Invalid check-out date format. Use YYYY-MM-DD.",
-                "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        if (!checkOut.isAfter(checkIn)) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Check-out date must be after check-in date.",
-                "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // Validate pax
-        int maxGuests = 0;
-        if (!paxText.isEmpty()) {
-            try {
-                maxGuests = Integer.parseInt(paxText);
-                if (maxGuests < 1 || maxGuests > 10) {
-                    JOptionPane.showMessageDialog(this,
-                        "Error: Number of guests must be 1-10.",
-                        "Validation Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Error: Please enter a valid number for guests.",
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        }
-        
-        // Validate price range
-        double priceMin = 0, priceMax = 999999.99;
-        try {
-            if (!priceMinText.isEmpty()) priceMin = Double.parseDouble(priceMinText);
-            if (!priceMaxText.isEmpty()) priceMax = Double.parseDouble(priceMaxText);
+            LocalDate inDate = LocalDate.parse(checkIn);
+            LocalDate outDate = LocalDate.parse(checkOut);
             
-            if (priceMin < 0 || priceMax < 0) {
-                JOptionPane.showMessageDialog(this,
-                    "Error: Price cannot be negative.",
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+            if (outDate.isBefore(inDate) || outDate.equals(inDate)) {
+                showError("Check-out date must be after check-in date");
                 return;
             }
-            if (priceMin > priceMax) {
-                JOptionPane.showMessageDialog(this,
-                    "Error: Minimum price cannot exceed maximum price.",
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
+            
+            if (inDate.isBefore(LocalDate.now())) {
+                showError("Check-in date cannot be in the past");
                 return;
             }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Please enter valid prices.",
-                "Validation Error", JOptionPane.ERROR_MESSAGE);
-            return;
+            
+            JOptionPane.showMessageDialog(this, "Searching for available rooms...");
+            lblErrorMessage.setVisible(false);
+        } catch (Exception ex) {
+            showError("Invalid date format. Use YYYY-MM-DD");
         }
-        
-        // TODO: Call RoomDAO to fetch available rooms
-        System.out.println("Search Parameters:");
-        System.out.println("  Check-in: " + checkInDate);
-        System.out.println("  Check-out: " + checkOutDate);
-        System.out.println("  Room Type: " + roomType);
-        System.out.println("  Max Guests: " + maxGuests);
-        System.out.println("  Price Range: PHP " + priceMin + " - " + priceMax);
-        
-        // Sample data for demonstration
-        model.setRowCount(0);
-        model.addRow(new Object[]{101, "101", 1, "Single Standard", 1, 3500.00, "Available"});
-        model.addRow(new Object[]{102, "102", 1, "Double Standard", 2, 5000.00, "Available"});
-        model.addRow(new Object[]{201, "201", 2, "Double Deluxe", 3, 7500.00, "Available"});
     }
     
     private void clearFilters() {
-        txtCheckInDate.setText("");
-        txtCheckOutDate.setText("");
-        cbRoomType.setSelectedIndex(0);
-        txtPax.setText("");
-        txtPriceMin.setText("0");
-        txtPriceMax.setText("100000");
-        model.setRowCount(0);
-        selectedRoomId = -1;
+        txtCheckIn.setText("");
+        txtCheckOut.setText("");
+        cmbRoomType.setSelectedIndex(0);
+        cmbCapacity.setSelectedIndex(0);
+        txtMinPrice.setText("0");
+        txtMaxPrice.setText("10000");
+        lblErrorMessage.setVisible(false);
     }
     
-    private void handleSelectRoom() {
-        if (selectedRoomId == -1) {
-            JOptionPane.showMessageDialog(this,
-                "Error: Please select a room from the results.",
-                "Selection Required", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-        
-        // TODO: Pass selected room to MakeReservationPanel
-        JOptionPane.showMessageDialog(this,
-            "Selected Room #" + selectedRoomNumber + " (ID: " + selectedRoomId + ")",
-            "Room Selected", JOptionPane.INFORMATION_MESSAGE);
-    }
-    
-    public int getSelectedRoomId() {
-        return selectedRoomId;
+    private void showError(String message) {
+        lblErrorMessage.setText("⚠ " + message);
+        lblErrorMessage.setVisible(true);
     }
 }
